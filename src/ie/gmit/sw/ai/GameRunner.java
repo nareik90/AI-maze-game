@@ -1,45 +1,44 @@
 package ie.gmit.sw.ai;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.management.modelmbean.ModelMBean;
-import javax.swing.*;
+import javax.swing.JFrame;
 
 import AI.AStar;
-import ie.gmit.sw.ai.GameView;
-import ie.gmit.sw.ai.Node;
-import ie.gmit.sw.ai.NodeType;
-import ie.gmit.sw.ai.*;
 
 public class GameRunner implements KeyListener{
+	public Node position;
+	
 	private Node[][] model;
 	private GameView view;
 	private AStar star;
 	private int currentRow;
 	private int currentCol;
-	private int mazeDimension;
-	private int counter = 0;
-	public Node startNode;
-	static boolean[][] mazeCheck = new boolean[5][5];
-	public Node getter;
-	private Node starting, finish;
+	private static int mazeDimension;
+	public static Node startNode;
 	static Node start = new Node(0, 0);
+	static Node end;
+	Player play;
+	int health;
+	int currentHealth = 10;
+	int enemyHealth;
+	int currentEnemyHealth = 10;
+	private Node goal;
 	
 	public GameRunner() throws Exception{
 		view = new GameView();
 		model = view.getMaze();
     	mazeDimension = view.getMazeDimension();
-
     	placePlayer();
-    	
     	Dimension d = new Dimension(GameView.DEFAULT_VIEW_SIZE, GameView.DEFAULT_VIEW_SIZE);
     	view.setPreferredSize(d);
     	view.setMinimumSize(d);
     	view.setMaximumSize(d);
-    	
     	JFrame f = new JFrame("GMIT - B.Sc. in Computing (Software Development)");
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.addKeyListener(this);
@@ -49,12 +48,12 @@ public class GameRunner implements KeyListener{
         f.setLocation(100,100);
         f.pack();
         f.setVisible(true);
-        star = new AStar(model, starting, start, view);
+        longestPath();
+        
 	}
 	
 	public void placePlayer(){   	
 		boolean placed = false;
-		
 		while(!placed) {
 	    	currentRow = (int) (mazeDimension * Math.random());
 	    	currentCol = (int) (mazeDimension * Math.random());
@@ -62,7 +61,6 @@ public class GameRunner implements KeyListener{
 	    	if (model[currentRow][currentCol].getNodeType() == NodeType.floor) 
 	    	{
 	    		placed = true;	
-	    		starting = model[currentRow][currentCol];
 	    	}
 		}
 		if(placed == true){
@@ -72,7 +70,9 @@ public class GameRunner implements KeyListener{
     	updateView(); 		
 	}
 	
+	@SuppressWarnings("unused")
 	public static void longestPath(){
+		boolean[][] mazeCheck = new boolean[mazeDimension - 1][mazeDimension -1];
 		List< Node > path = findLongestPath(mazeCheck);
 		if(NodeType.floor != null)
 		{
@@ -84,8 +84,9 @@ public class GameRunner implements KeyListener{
 			  }
 			  for (Node node : path)
 			  {
-				  //System.out.print("pathways: "+ node + ",");
-				  
+				  System.out.print(path + ",");
+				  System.out.println();
+				 end.setNodeType(NodeType.trophy);
 			  }
 		  }
 		return;
@@ -94,6 +95,11 @@ public class GameRunner implements KeyListener{
 	private void updateView(){
 		view.setCurrentRow(currentRow);
 		view.setCurrentCol(currentCol);
+	}
+	
+	@SuppressWarnings("unused")
+	private void activateSearch(Node[][] maze, Node startNode, Node goal, GameView view){
+		new AStar(maze, startNode, goal, view);
 	}
 
     public void keyPressed(KeyEvent e) {
@@ -124,27 +130,58 @@ public class GameRunner implements KeyListener{
 		if (r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.floor){
 			model[currentRow][currentCol].setNodeType(NodeType.floor);
 			model[r][c].setNodeType(NodeType.player);
+			position = model[r][c];
+			view.goalValue = position;
+			System.out.println("goal Value: "+position);
+		    new AStar(model, startNode, position, view);
 			return true;
 		}
 		else if(r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.weapon){
-			System.out.print("Sword Swishhh...");
-			model[r][c].setNodeType(NodeType.wall);
-			return false;
+			 System.out.print("Sword Swishhh...");
+			 model[r][c].setNodeType(NodeType.wall);
+			 health = (int) (currentHealth * Math.random());
+			 Player.setHealth(health);
+			 System.out.println("Health: " +health);
+			 return false;
 		}
 	    else if(r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.bomb){
 			System.out.print("Bomb Booommm...");
+			health = 10;
 			model[r][c].setNodeType(NodeType.wall);
 			return false;
 		}
-	    else if(r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.hBomb){
-			System.out.print("Sure ill Help:....");
+	    else if(r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.arrow){
+			System.out.print("Follow");
 			model[r][c].setNodeType(NodeType.wall);
-			//GameView.longestPath();
+			return false;
+		}
+	    else if(r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.hBomb)
+	    {
+			System.out.print("Helper:....");
+			//activateSearch(model, startNode, goalNode, view);
+			model[r][c].setNodeType(NodeType.wall);
+			view.goalValue = position;
+			System.out.println("goal Value: "+position);
+		    new AStar(model, startNode, position, view);
+			return false;
+		}
+	    else if(r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.trophy)
+	    {
+			System.out.print("Helper:....");
+			model[r][c].setNodeType(NodeType.floor);
+			//star = new AStar(model, starting, start, view);
 			return false;
 		}
 	    else if(r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.enemy){
-			System.out.print("Bomb Booommm...");
+			System.out.print("Enemy Ahhhh...");
+			try {
+				enemyFight();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			model[r][c].setNodeType(NodeType.floor);
+			health = 1;
 			return false;
 		}
 	    else{
@@ -152,24 +189,44 @@ public class GameRunner implements KeyListener{
 		}
 	}
 	
+	private void enemyFight() throws Exception{
+		 enemyHealth = (int) (currentEnemyHealth * Math.random());
+		 EnemyImpl.setEnemyHealth(enemyHealth);
+		 System.out.println("Enemy Health: " + enemyHealth);
+		 System.out.println("Player Health: " + health);
+		
+		/* if(enemyHealth > health)
+		 {
+			
+		 }
+		 else if(enemyHealth == health){
+			 placePlayer();
+		 }*/
+		 
+	}
+	
 	private static List< Node > findLongestPath(boolean[][] maze)
 	 {
-	  //Node start = new Node(0, 0);
-	 // start =  runer.startNode ;
-	 // Node start = runer.getStartingPosition();
-	  System.out.println("List longest path: "+start);
-	  Node end = new Node(maze.length - 1, maze[0].length - 1);
-	 //System.out.println("End: "+end);
-	  List< Node > path = findLongestPath(maze, start, end);
-	 // System.out.println("find method" + path);
-	  return path;
+		  //Node start = new Node(0, 0);
+		start = startNode;
+		System.out.println("Start Node: "+startNode);
+		end = new Node(maze.length - 1, maze[0].length - 1);
+		end.setNodeType(NodeType.trophy); 
+		  
+		List< Node > path = findLongestPath(maze, start, end);
+			
+		  
+		  return path;
 	 }
 	
 	private static List< Node > findLongestPath(boolean[][] maze, Node start, Node end)
-	{
+	{	
 		  List< Node > result = null;
 		  int rows = maze.length;
 		  int cols = maze[0].length;
+		  
+		if(start.getNodeType() == NodeType.floor)
+		{
 		  if (start.getRow() < 0 || start.getCol() < 0)
 		   return null;
 		  if (start.getRow() == rows || start.getCol() == cols)
@@ -183,15 +240,16 @@ public class GameRunner implements KeyListener{
 			   return path;
 		  }
 		 
-		  
+		
 			  maze[start.getRow()][start.getCol()] = true;
-			  Node[] nextNodes = new Node[4];
-			  nextNodes[0] = new Node(start.getRow() + 1, start.getCol());
-			  nextNodes[2] = new Node(start.getRow(), start.getCol() + 1);
-			  nextNodes[1] = new Node(start.getRow() - 1, start.getCol());
-			  nextNodes[3] = new Node(start.getRow(), start.getCol() - 1);
-			  int maxLength = -1;
-			 
+
+				  Node[] nextNodes = new Node[4];
+				  nextNodes[0] = new Node(start.getRow() + 1, start.getCol());
+				  nextNodes[2] = new Node(start.getRow(), start.getCol() + 1);
+				  nextNodes[1] = new Node(start.getRow() - 1, start.getCol());
+				  nextNodes[3] = new Node(start.getRow(), start.getCol() - 1);
+				  int maxLength = -1;
+			  
 			  for (Node nextNode : nextNodes)
 			  {
 				   List< Node > path = findLongestPath(maze, nextNode, end);
@@ -200,19 +258,21 @@ public class GameRunner implements KeyListener{
 					    maxLength = path.size();
 					    path.add(0, start);
 					    result = path;
-					    //System.out.println("find method" + path);
+					    System.out.println("find method" + path);
 				   }
 			  }
+		
 			  maze[start.getRow()][start.getCol()] = false;
 			  if (result == null || result.size() == 0)
 			   return null;
+		}
 			  return result;
-		  
-		 }
+			
+	}
 	
 	public static void main(String[] args) throws Exception{
+		
 		new GameRunner();
 		
-		longestPath();
 	}
 }

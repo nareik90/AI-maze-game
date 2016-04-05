@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import AI.HeuristicCalculator;
 import ie.gmit.sw.ai.Enemy;
 import ie.gmit.sw.ai.Node;
 import ie.gmit.sw.ai.NodeType;
@@ -15,35 +16,33 @@ public class Node {
 	// npc's to the player to weapons
 	private NodeType nodeType;
 	private int row, col;
-	private Enemy e;
 	private boolean visited = false;
 	private boolean isGoalNode = false;
 	private Set<Node> nodeSet;
 	private boolean startingCell = false;
 	private int approximateDistanceFromGoal = 0;
-	private String nodeName;
+	private int distanceTravelled, approxDistanceToGoal;
 	private Node parent;
-	private Node starting;
-	
-	public Node() {
-		nodeSet = new HashSet<Node>();
-		nodeSet.add(this);
+
+	public int getHeuristic(Node goal){
+		double x1 = this.col; 
+		double y1 = this.row;
+
+		double x2 = goal.getCol();
+		double y2 = goal.getRow();
+		return (int) Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
 	}
-	
-	public Node(String name){
-		this.nodeName = name;
+	// Returns true if a path can be made through the node
+	public boolean isTraversable() {
+		return nodeType == NodeType.floor
+				|| nodeType == NodeType.player
+				|| nodeType == NodeType.arrow;
 	}
-	
-	public Node(String name, int goalDistance){
-		this.nodeName = name;
-		this.approximateDistanceFromGoal = goalDistance;
+	public boolean containsItem() {
+		return nodeType == NodeType.bomb 
+				|| nodeType == NodeType.hint
+				|| nodeType == NodeType.weapon;
 	}
-	
-	public Node(int row, int column)
-	  {
-	   this.row = row;
-	   this.col = column;
-	  }
 	
 	public boolean isStartingCell() {
 		return startingCell;
@@ -52,18 +51,52 @@ public class Node {
 	public void setStartingCell(boolean startingCell) {
 		this.startingCell = startingCell;
 	}
+	
+	public int getDistanceTravelled() {
+		return distanceTravelled;
+	}
+
+	public void setDistanceTravelled(int distanceTravelled) {
+		this.distanceTravelled = distanceTravelled;
+	}
+
+	public int getApproxDistanceToGoal() {
+		return approxDistanceToGoal;
+	}
+
+	public void setApproxDistanceToGoal(int approxDistanceToGoal) {
+		this.approxDistanceToGoal = approxDistanceToGoal;
+	}
+	
+	public float getScore() {
+		return HeuristicCalculator.getHeuristicValue(distanceTravelled, approxDistanceToGoal);
+	}
+	
 	public boolean isVisited() {
 		return visited;
 	}
 	public void setVisited(boolean visited) {
 		this.visited = visited;
 	}
+	
+	public Node() {
+		nodeSet = new HashSet<Node>();
+		nodeSet.add(this);
+	}
+	
+	public Node(int row, int column)
+	  {
+	   this.row = row;
+	   this.col = column;
+	  }
+
 	public boolean isGoalNode() {
 		return isGoalNode;
 	}
 	public void setGoalNode(boolean isGoalNode) {
 		this.isGoalNode = isGoalNode;
 	}
+
 	
 	
 	// Returns true if the Node isn't a border Node
@@ -153,14 +186,6 @@ public class Node {
 		    return true;
 		   return false;
 	  }
-
-	public int getHeuristic(Node goal){
-		double x1 = this.col; 
-		double y1 = this.row;
-
-		double x2 = goal.getCol();
-		double y2 = goal.getRow();
-		return (int) Math.sqrt(Math.pow((x2 - x1), 2) + Math.pow((y2 - y1), 2));
-	}
 	
+	 
 }

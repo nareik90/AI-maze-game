@@ -6,7 +6,7 @@ public class HeuristicCalculator {
 	 * 
 	 * 	f*(n) = actual distance + (approximate goal distance adjusted for terrain & danger)
 	 */
-	public static float getHeuristicValue(int distanceTravelled, int approxGoalDistance, float terrain, float danger){
-		return distanceTravelled + approxGoalDistance + (approxGoalDistance * terrain) + (approxGoalDistance * danger);
+	public static float getHeuristicValue(int distanceTravelled, int approxGoalDistance){
+		return distanceTravelled + approxGoalDistance;
 	}
 }

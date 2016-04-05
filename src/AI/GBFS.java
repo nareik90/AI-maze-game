@@ -8,18 +8,18 @@ import ie.gmit.sw.ai.GameView;
 import ie.gmit.sw.ai.Node;
 import ie.gmit.sw.ai.NodeType;
 
-
-public class AStar {
+public class GBFS {
 	private GameView g;
 	private Node[][] maze;
 	private Node goal;
 	
 	private HeuristicNodeComparator heuristicComparer;
-	private List<Node> closed = new ArrayList<Node>();
+	List<Node> closed = new ArrayList<Node>();
 	private PriorityQueue<Node> open;
 	
-	public AStar(Node[][] maze, Node start, Node goal, GameView g) {
+	public GBFS(Node[][] maze, Node start, Node goal, GameView g) {
 		this.maze = maze;
+		System.out.println(goal);
 		this.goal = goal;
 		this.g= g;
 		heuristicComparer = new HeuristicNodeComparator();
@@ -27,7 +27,6 @@ public class AStar {
 		new Thread(new Runnable() {
 			public void run () {
 				search(start);
-				//System.out.println("Start: "+start);
 			}
 		}).start();
 		setNodesAsUnvisited();
@@ -35,11 +34,10 @@ public class AStar {
 	
 	public void search(Node start) {
 		open.add(start);
-		start.setDistanceTravelled(0);
+
 		while(!open.isEmpty()) {
-			
 			Node next = open.poll();
-			
+			System.out.println(next);
 			if (next.isGoalNode()) {
 				List<Node> path = new ArrayList<Node>();
 				
@@ -50,37 +48,32 @@ public class AStar {
 				// return with List of Nodes and repaint the scene 
 				// to show path to goal
 				g.showPath(path);
-				
 			}
-
+			
 			pushSuccessors(next);
 			closed.add(next);
 		}
-		System.out.println("Goal " + goal.getRow() + "/" + goal.getCol());
+		System.out.println("GOAL: " + goal.getRow() + "/" + goal.getCol());
 	}
 	
-	public void pushSuccessors(Node current) {
-		List<Node> children = current.getAdjacentNodes(maze);
-
+	public void pushSuccessors(Node next) {
+		List<Node> children = next.getAdjacentNodes(maze);
+		int score = 0, bestScore = 0;
 		for (Node child : children) {
+			score = child.getHeuristic(goal)+1;
 
-//			float score = HeuristicCalculator.getHeuristicValue(current.getDistanceTravelled()+current.getHeuristic(child), current.getHeuristic(goal));
-			int score = current.getHeuristic(goal) + current.getDistanceTravelled();
+			if(child.getNodeType() != NodeType.floor && child.getNodeType() != NodeType.enemy
+					&& child.getNodeType() != NodeType.player && child.getNodeType()!= NodeType.trophy) continue;
 
-			child.setDistanceTravelled(current.getDistanceTravelled()+1);
-			child.setApproxDistanceToGoal(child.getHeuristic(goal));
-
-			if(!child.isTraversable() && child.getNodeType()!= NodeType.trophy) continue;
-			if(open.contains(child) || closed.contains(child)) continue; 
+			if ((open.contains(child) || closed.contains(child)) && child.getHeuristic(goal) < score) continue;
 			
-			child.setDistanceTravelled(current.getDistanceTravelled() + current.getHeuristic(child));
-			child.setParent(current);
-
-			if(child.getScore() < score) {
-				open.add(child);
-				closed.add(current);
-			}
 			else {
+				
+				bestScore = score;
+				System.out.println("NODE : " + child.getRow() + " " + child.getCol());
+				open.remove(next);
+				closed.add(next);
+				child.setParent(next);
 				open.add(child);
 			}
 		}

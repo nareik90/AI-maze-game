@@ -13,7 +13,7 @@ public class HillClimbing {
 	
 	LinkedList<Node> queue = new LinkedList<Node>();
 	List<Node> closed = new ArrayList<Node>();
-	HeuristicNodeComparator sorter = new HeuristicNodeComparator(null);
+	HeuristicNodeComparator sorter = new HeuristicNodeComparator();
 	
 	
 	public void search(Node node){

@@ -2,6 +2,8 @@ package ie.gmit.sw.ai;
 
 import java.util.Random;
 
+import AI.RandomWalk;
+
 public class EnemyImpl implements Enemy {
 	
 	/* Enemy Object Class
@@ -10,6 +12,7 @@ public class EnemyImpl implements Enemy {
 	 */
 	private Traversator t;
 	private Random r = new Random(); 
+	private int health = 1;
 	
 	public EnemyImpl(Node[][] maze, Node startNode, GameView g) throws Exception  {
 		search(maze, startNode, g);
@@ -39,5 +42,13 @@ public class EnemyImpl implements Enemy {
 
 	public Node getNextNode() {
 		return t.getNextNode();
+	}
+	
+	public int getEnemyHealth() {
+		return health;
+	}
+
+	public static void setEnemyHealth(int health) {
+		health = health;
 	}
 }

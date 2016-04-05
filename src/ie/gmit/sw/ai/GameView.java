@@ -1,24 +1,25 @@
 package ie.gmit.sw.ai;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.imageio.*;
-import javax.swing.*;
+import javax.imageio.ImageIO;
+import javax.swing.JPanel;
+import javax.swing.Timer;
 
-import ie.gmit.sw.ai.Enemy;
-import ie.gmit.sw.ai.MazeGenerator;
-import ie.gmit.sw.ai.Node;
-import ie.gmit.sw.ai.NodeType;
+import AI.AStar;
 
 public class GameView extends JPanel implements ActionListener{
 	private static final long serialVersionUID = 1L;
 	public static final int DEFAULT_VIEW_SIZE = 800;	
-	private static final int IMAGE_COUNT = 10;
-	private static final int MAZE_DIMENSION = 40;
+	private static final int IMAGE_COUNT = 11;
+	private static final int MAZE_DIMENSION = 60;
 	private MazeGenerator m = new MazeGenerator(MAZE_DIMENSION, MAZE_DIMENSION);
 	private int cellspan = 5;	
 	private int cellpadding = 2;
@@ -31,14 +32,15 @@ public class GameView extends JPanel implements ActionListener{
 	private boolean zoomOut = false;
 	private int imageIndex = -1;
 	private List<Enemy> enemies = new ArrayList<Enemy>();
-	private boolean hintActive = false;
-	private Timer hintTimer;
-	
-	private static GameRunner runer;
+	private Player p;
+	private Node goalNode;
+	public Node goalValue;
+	private Long startGameTime;
 	
 	public GameView () throws Exception {
 		maze = m.getMaze();
 		init();
+		initializeEntities();
 		setBackground(Color.LIGHT_GRAY);
 		setDoubleBuffered(true);
 		timer = new Timer(300, this);
@@ -65,23 +67,6 @@ public class GameView extends JPanel implements ActionListener{
 		}
 	}
 
-/*	public static void longestPath(){
-		System.out.print("Searching...");
-		List< Node > path = findLongestPath(mazeCheck);
-		 if (path == null)
-		  {
-			 System.out.println("None");
-			 System.out.println("No path possible");
-			 return;
-		  }
-		  for (Node node : path)
-		  {
-			  System.out.print(node + ",");
-			  System.out.println();
-		  }
-		return;
-	}*/
-
 	public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D)g;
@@ -100,13 +85,13 @@ public class GameView extends JPanel implements ActionListener{
         			ch = maze[row][col].getNodeType();
         			// Display character on map
         			if (row == currentRow && col == currentCol){
-        				g2.setColor(Color.WHITE);
+        				g2.setColor(Color.BLUE);
         				g2.fillRect(x1, y1, size, size);
         				continue;
         			} else if (maze[row][col].getNodeType() == NodeType.enemy) {
         				g2.setColor(Color.RED);
         				g2.fillRect(x1, y1, size, size);
-        			} else if (maze[row][col].getNodeType() == NodeType.goal) {
+        			} else if (maze[row][col].getNodeType() == NodeType.trophy) {
         				g2.setColor(Color.YELLOW);
         				g2.fillRect(x1, y1, size, size);
         			}
@@ -129,14 +114,19 @@ public class GameView extends JPanel implements ActionListener{
         			imageIndex = 7;;     			
         		}else if (ch == NodeType.player) {
         			imageIndex = enemy_state;;      
-        		} else{
+        		}
+        		else if (ch == NodeType.trophy) {
+        			imageIndex = 9;;      
+        		}
+        		else if (ch == NodeType.arrow) {
+        			imageIndex = 10;;      
+        		}else{
         			imageIndex = -1;
         		}
-        		
         		if (imageIndex >= 0){
         			g2.drawImage(images[imageIndex], x1, y1, null);
         		}else{
-        			g2.setColor(Color.LIGHT_GRAY);
+        			g2.setColor(Color.WHITE);
         			g2.fillRect(x1, y1, size, size);
         		}      		
         	}
@@ -171,10 +161,10 @@ public class GameView extends JPanel implements ActionListener{
 		images[4] = ImageIO.read(new java.io.File("resources/hBomb.png"));
 		images[5] = ImageIO.read(new java.io.File("resources/standing.png"));
 		images[6] = ImageIO.read(new java.io.File("resources/runningleft.png"));
-		
 		images[7] = ImageIO.read(new java.io.File("resources/spider_down.png"));
 		images[8] = ImageIO.read(new java.io.File("resources/spider_up.png"));
 		images[9] = ImageIO.read(new java.io.File("resources/trophy.png"));
+		images[10] = ImageIO.read(new java.io.File("resources/arrow.png"));
 	}
 
 	public MazeGenerator getMazeGenerator() {
@@ -195,82 +185,74 @@ public class GameView extends JPanel implements ActionListener{
 	}
 	
 	public void showPath(List<Node> path) {
-		System.out.println("GOAL!!!");
-//		if (!hintTimer.isRunning()) {
-			for(Node node : path) {
-				if (node.getNodeType() != NodeType.player &&
-						node.getNodeType() != NodeType.enemy && node.getNodeType()!= NodeType.goal) 
-					node.setNodeType(NodeType.path);
-			}
-//			new TimerTask() {	
-//				public void run() {
-					hidePath();
-//				}
-//			};
-//		}
-		hintActive = false;
+		startGameTime = System.currentTimeMillis();
+		for(Node node : path) 
+		{
+			if (node.getNodeType() != NodeType.player &&
+					node.getNodeType() != NodeType.enemy && node.getNodeType()!= NodeType.trophy) 
+				node.setNodeType(NodeType.arrow);
+		}
+		if(System.currentTimeMillis() - startGameTime >= 5000){
+		    stop(path);
+		}
+
+	}
+	public void stop(List<Node> path){
+		for(Node node : path) 
+		{
+			if (node.getNodeType() != NodeType.player &&
+					node.getNodeType() != NodeType.enemy && node.getNodeType()!= NodeType.trophy) 
+				node.setNodeType(NodeType.floor);
+		}
 	}
 	
-public void hidePath() {
-		
-	}
-	
-	/*private static List< Node > findLongestPath(boolean[][] maze)
-	 {
-	  Node start = new Node(0, 0);
-	 // start =  runer.startNode ;
-	 // Node start = runer.getStartingPosition();
-	  System.out.println("Start: "+start);
-	  Node end = new Node(maze.length - 1, maze[0].length - 1);
-	  System.out.println("End: "+end);
-	  List< Node > path = findLongestPath(maze, start, end);
-	  System.out.println("find method" + path);
-	  return path;
-	 }
-	
-	private static List< Node > findLongestPath(boolean[][] maze, Node start, Node end)
+	/*private void initializeEnemys() throws Exception 
 	{
-		
-		Node newCol = start;
-		  List< Node > result = null;
-		  int rows = maze.length;
-		  int cols = maze[0].length;
-		  if (start.getRow() < 0 || start.getCol() < 0)
-		   return null;
-		  if (start.getRow() == rows || start.getCol() == cols)
-		   return null;
-		  if (maze[start.getRow()][start.getCol()] == true)
-		   return null;
-		  if (start.equals(end))
-		  {
-			   List< Node > path = new ArrayList< Node >();
-			   path.add(start);
-			  //System.out.println("start" + start);
-			   return path;
-		  }
-		  
-		  maze[start.getRow()][start.getCol()] = true;
-		  Node[] nextNodes = new Node[4];
-		  nextNodes[0] = new Node(start.getRow() + 1, start.getCol());
-		  nextNodes[2] = new Node(start.getRow(), start.getCol() + 1);
-		  nextNodes[1] = new Node(start.getRow() - 1, start.getCol());
-		  nextNodes[3] = new Node(start.getRow(), start.getCol() - 1);
-		  int maxLength = -1;
-		  
-		  for (Node nextNode : nextNodes)
-		  {
-			   List< Node > path = findLongestPath(maze, nextNode, end);
-			   if (path != null && path.size() > maxLength)
-			   {
-				    maxLength = path.size();
-				    path.add(0, start);
-				    result = path;
-				    //System.out.println("find method" + path);
-			   }
-		  }
-		  maze[start.getRow()][start.getCol()] = false;
-		  if (result == null || result.size() == 0)
-		   return null;
-		  return result;
-		 }*/
+		for(int row=0; row<maze.length; row++) 
+		{
+			for(int col=0; col<maze[0].length; col++)
+			{	
+				// Initialize enemy objects
+				Node n = maze[row][col];
+				if (n.getNodeType() == NodeType.enemy) {
+					Enemy e = new EnemyImpl(maze, n, this);
+					e.setCurrentNode(n);
+					enemies.add(e);
+				}
+				else if (n.getNodeType() == NodeType.trophy) {
+					goalNode = n;
+					goalNode.setGoalNode(true);
+					System.out.println("Goal Node: "+goalNode);
+				}
+				
+			}
+		}
+	}*/
+
+	private void initializeEntities() throws Exception {
+		System.out.println("In");
+		for(int row=0; row<maze.length; row++) {
+			for(int col=0; col<maze[0].length; col++) {
+				// Initialize enemy objects
+				Node n = maze[row][col];
+				if (n.getNodeType() == NodeType.enemy) {
+					Enemy e = new EnemyImpl(maze, n, this);
+					e.setCurrentNode(n);
+					enemies.add(e);
+					//n.setEnemy(e);
+				}
+				// Initialize Player Object
+				else if (n.getNodeType() == NodeType.player) {
+					System.out.println("Player");
+			    	p = new Player(n);
+				}
+				else if (n.getNodeType() == NodeType.trophy) {
+					goalNode = n;
+					goalNode.setGoalNode(true);
+					System.out.println("Trophy: " + goalNode);
+					goalValue = n;
+				}
+			}
+	}
+}
 }

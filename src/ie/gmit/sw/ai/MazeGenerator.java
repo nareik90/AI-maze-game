@@ -28,9 +28,9 @@ public class MazeGenerator {
 		
 		addFeature(NodeType.enemy, NodeType.floor, 10);
 		addFeature(NodeType.weapon, NodeType.wall, 20);
-		addFeature(NodeType.hint, NodeType.wall, 8);
 		addFeature(NodeType.bomb, NodeType.wall, 5);
-		addFeature(NodeType.hBomb, NodeType.wall, 3);
+		addFeature(NodeType.hBomb, NodeType.wall, 10);
+		addFeature(NodeType.trophy, NodeType.floor, 1);
 	}
 	
 	private void addFeature(NodeType feature, NodeType replace, int number){
