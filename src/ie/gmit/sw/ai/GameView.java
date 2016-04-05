@@ -236,7 +236,7 @@ public class GameView extends JPanel implements ActionListener{
 				// Initialize enemy objects
 				Node n = maze[row][col];
 				if (n.getNodeType() == NodeType.enemy) {
-					Enemy e = new EnemyImpl(maze, n, this);
+					Enemy e = new EnemyImplementation(maze, n, this);
 					e.setCurrentNode(n);
 					enemies.add(e);
 					//n.setEnemy(e);

@@ -6,14 +6,16 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.JFrame;
+import java.io.FileInputStream;
 
 import AI.AStar;
 
 public class GameRunner implements KeyListener{
-	public Node position;
+	//String fileName = "AI/contact.fcl";
+	//FIS fis = FIS.load(fileName,true);
 	
+	public Node position;
 	private Node[][] model;
 	private GameView view;
 	private AStar star;
@@ -23,12 +25,13 @@ public class GameRunner implements KeyListener{
 	public static Node startNode;
 	static Node start = new Node(0, 0);
 	static Node end;
-	Player play;
+	Player p;
 	int health;
-	int currentHealth = 10;
+	int currentHealth = 100;
 	int enemyHealth;
 	int currentEnemyHealth = 10;
 	private Node goal;
+	private HUD hud = new HUD(mazeDimension);
 	
 	public GameRunner() throws Exception{
 		view = new GameView();
@@ -49,6 +52,7 @@ public class GameRunner implements KeyListener{
         f.pack();
         f.setVisible(true);
         longestPath();
+       
         
 	}
 	
@@ -130,10 +134,7 @@ public class GameRunner implements KeyListener{
 		if (r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.floor){
 			model[currentRow][currentCol].setNodeType(NodeType.floor);
 			model[r][c].setNodeType(NodeType.player);
-			position = model[r][c];
-			view.goalValue = position;
-			System.out.println("goal Value: "+position);
-		    new AStar(model, startNode, position, view);
+
 			return true;
 		}
 		else if(r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.weapon){
@@ -158,10 +159,9 @@ public class GameRunner implements KeyListener{
 	    else if(r <= model.length - 1 && c <= model[r].length - 1 && model[r][c].getNodeType() == NodeType.hBomb)
 	    {
 			System.out.print("Helper:....");
-			//activateSearch(model, startNode, goalNode, view);
 			model[r][c].setNodeType(NodeType.wall);
 			view.goalValue = position;
-			System.out.println("goal Value: "+position);
+			//System.out.println("goal Value: "+position);
 		    new AStar(model, startNode, position, view);
 			return false;
 		}
@@ -188,20 +188,17 @@ public class GameRunner implements KeyListener{
 			return false; //Can't move
 		}
 	}
-	
+
 	private void enemyFight() throws Exception{
 		 enemyHealth = (int) (currentEnemyHealth * Math.random());
-		 EnemyImpl.setEnemyHealth(enemyHealth);
+		 EnemyImplementation.setEnemyHealth(enemyHealth);
 		 System.out.println("Enemy Health: " + enemyHealth);
 		 System.out.println("Player Health: " + health);
 		
-		/* if(enemyHealth > health)
+		 if(enemyHealth > health)
 		 {
-			
+			new GameRunner();
 		 }
-		 else if(enemyHealth == health){
-			 placePlayer();
-		 }*/
 		 
 	}
 	
